@@ -41,9 +41,12 @@ fn make_playlist_item(playlist_item: AlbumModel) -> SideBarItem {
     SideBarItem::new(id.as_str(), &title, "playlist2-symbolic", false)
 }
 
-fn new_playlist_clicked(row: &gtk::ListBoxRow, model: Rc<HomeModel>) {
+fn new_playlist_clicked(row: &gtk::ListBoxRow, listbox: &gtk::ListBox, model: Rc<HomeModel>) {
     let w = CreatePlaylistWidget::new(row);
-    w.connect_create(move |name| model.create_new_playlist(name));
+    w.connect_create(clone!(@strong model => move |name| model.create_new_playlist(name)));
+    w.connect_closed(
+        clone!(@weak listbox => move |_| model.reselect_currently_selected_row(listbox)),
+    );
     w.popup();
 }
 
@@ -144,7 +147,7 @@ impl HomePane {
     pub fn connect_navigated<F: Fn() + 'static>(&self, f: F) {
         let playlist_model = self.saved_playlists_model.clone();
         self.listbox.connect_row_activated(
-            clone!(@weak self.stack as stack @strong self.model as model => move |_, row| {
+            clone!(@weak self.stack as stack @strong self.model as model @weak self.listbox as listbox => move |_, row| {
                 let id = row.downcast_ref::<SideBarRow>().unwrap().id();
                 match id.as_str() {
                     LIBRARY | SAVED_TRACKS | NOW_PLAYING | SAVED_PLAYLISTS => {
@@ -152,27 +155,11 @@ impl HomePane {
                         stack.set_visible_child_name(&id);
                         f();
                     },
-                    NEW_PLAYLIST => new_playlist_clicked(row, Rc::clone(&model)),
+                    NEW_PLAYLIST => new_playlist_clicked(row, &listbox, Rc::clone(&model)),
                     _ => {
                         model.sidebar_item_activated(id.clone(), row.index());
                         playlist_model.open_playlist(id);
                     },
-                }
-            }),
-        );
-    }
-
-    pub fn connect_selected(&mut self) {
-        self.listbox.connect_row_selected(
-            clone!(@weak self.listbox as listbox @strong self.model as model => move |_, row| {
-                let id = row.unwrap().downcast_ref::<SideBarRow>().unwrap().id();
-                match id.as_str() {
-                    SAVED_PLAYLISTS => {
-                        if model.previously_selected_sidebar_item() != SAVED_PLAYLISTS {
-                            model.reselect_currently_selected_row(listbox);
-                        }
-                    }
-                    _ => {}
                 }
             }),
         );

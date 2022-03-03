@@ -33,13 +33,6 @@ impl HomeModel {
             })
     }
 
-    pub fn previously_selected_sidebar_item(&self) -> String {
-        let item = self
-            .app_model
-            .map_state(|s| s.sidebar.get_previously_selected_item());
-        item.deref().clone()
-    }
-
     pub fn sidebar_item_activated(&self, item: String, id: i32) {
         self.dispatcher
             .dispatch(AppAction::SidebarAction(SidebarAction::SelectItem(

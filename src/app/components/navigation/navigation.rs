@@ -64,7 +64,7 @@ impl Navigation {
 
     fn make_home(&self) -> Box<dyn ListenerComponent> {
         let model = HomeModel::new(Rc::clone(&self.app_model), self.dispatcher.box_clone());
-        let mut home = HomePane::new(
+        let home = HomePane::new(
             model,
             self.home_listbox.clone(),
             &self.screen_factory,
@@ -78,7 +78,6 @@ impl Navigation {
             }
                 ),
         );
-        home.connect_selected();
 
         Box::new(home)
     }
